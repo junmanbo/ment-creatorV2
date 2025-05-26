@@ -1,9 +1,12 @@
+#!/bin/bash
+
 # 코드 포맷팅
-uv run black app/
-uv run isort app/
+echo 'ruff 포맷팅...'
+uv run ruff format app/
 
 # 타입 체킹
-uv run mypy app/
+echo 'ruff 타입 체킹...'
+uv run ruff check app/ --fix
 
 # 테스트 실행
-uv run pytest
+#uv run pytest

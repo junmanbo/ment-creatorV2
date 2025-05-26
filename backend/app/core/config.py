@@ -1,5 +1,10 @@
+# app/core/config.py
+"""
+애플리케이션 설정 관리
+"""
+
 import secrets
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 from pydantic import AnyHttpUrl, BaseSettings, EmailStr, HttpUrl, PostgresDsn, validator
 
@@ -24,13 +29,13 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
     # CORS 설정
-    BACKEND_CORS_ORIGINS: List[AnyHttpUrl] = []
+    BACKEND_CORS_ORIGINS: list[AnyHttpUrl] = []
 
     @validator("BACKEND_CORS_ORIGINS", pre=True)
-    def assemble_cors_origins(cls, v: Union[str, List[str]]) -> Union[List[str], str]:
+    def assemble_cors_origins(cls, v: str | list[str]) -> list[str] | str:
         if isinstance(v, str) and not v.startswith("["):
             return [i.strip() for i in v.split(",")]
-        elif isinstance(v, (list, str)):
+        elif isinstance(v, list | str):
             return v
         raise ValueError(v)
 
@@ -40,11 +45,11 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: str = "password"
     POSTGRES_DB: str = "insurance_ars"
     POSTGRES_PORT: str = "5432"
-    DATABASE_URL: Optional[PostgresDsn] = None
-    DATABASE_URL_SYNC: Optional[str] = None
+    DATABASE_URL: PostgresDsn | None = None
+    DATABASE_URL_SYNC: str | None = None
 
     @validator("DATABASE_URL", pre=True)
-    def assemble_db_connection(cls, v: Optional[str], values: Dict[str, Any]) -> Any:
+    def assemble_db_connection(cls, v: str | None, values: dict[str, Any]) -> Any:
         if isinstance(v, str):
             return v
         return PostgresDsn.build(
@@ -57,9 +62,7 @@ class Settings(BaseSettings):
         )
 
     @validator("DATABASE_URL_SYNC", pre=True)
-    def assemble_sync_db_connection(
-        cls, v: Optional[str], values: Dict[str, Any]
-    ) -> str:
+    def assemble_sync_db_connection(cls, v: str | None, values: dict[str, Any]) -> str:
         if isinstance(v, str):
             return v
         return (
@@ -75,7 +78,7 @@ class Settings(BaseSettings):
     UPLOAD_DIR: str = "./uploads"
     AUDIO_DIR: str = "./audio_files"
     MAX_FILE_SIZE: int = 50 * 1024 * 1024  # 50MB
-    ALLOWED_FILE_EXTENSIONS: List[str] = [".wav", ".mp3", ".flac", ".ogg"]
+    ALLOWED_FILE_EXTENSIONS: list[str] = [".wav", ".mp3", ".flac", ".ogg"]
 
     # TTS 설정
     TTS_MODEL_PATH: str = "./models"
@@ -94,15 +97,15 @@ class Settings(BaseSettings):
 
     # 이메일 설정 (선택사항)
     SMTP_TLS: bool = True
-    SMTP_PORT: Optional[int] = None
-    SMTP_HOST: Optional[str] = None
-    SMTP_USER: Optional[str] = None
-    SMTP_PASSWORD: Optional[str] = None
-    EMAILS_FROM_EMAIL: Optional[EmailStr] = None
-    EMAILS_FROM_NAME: Optional[str] = None
+    SMTP_PORT: int | None = None
+    SMTP_HOST: str | None = None
+    SMTP_USER: str | None = None
+    SMTP_PASSWORD: str | None = None
+    EMAILS_FROM_EMAIL: EmailStr | None = None
+    EMAILS_FROM_NAME: str | None = None
 
     # 모니터링 설정
-    SENTRY_DSN: Optional[HttpUrl] = None
+    SENTRY_DSN: HttpUrl | None = None
 
     # Rate Limiting 설정
     RATE_LIMIT_GENERAL: str = "1000/hour"
@@ -111,7 +114,7 @@ class Settings(BaseSettings):
     RATE_LIMIT_SIMULATION: str = "200/hour"
 
     # 배포 설정
-    DEPLOYMENT_ENVIRONMENTS: List[str] = ["development", "staging", "production"]
+    DEPLOYMENT_ENVIRONMENTS: list[str] = ["development", "staging", "production"]
     DEFAULT_DEPLOYMENT_TIMEOUT: int = 300  # 5분
 
     # 보안 헤더 설정

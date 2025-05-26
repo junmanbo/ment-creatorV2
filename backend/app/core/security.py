@@ -1,12 +1,12 @@
+# app/core/security.py
 """
 보안 관련 유틸리티
 """
 
 import secrets
 from datetime import datetime, timedelta
-from typing import Any, Dict, Optional, Union
+from typing import Any
 
-import bcrypt
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 
@@ -21,7 +21,7 @@ class SecurityManager:
 
     @staticmethod
     def create_access_token(
-        subject: Union[str, Any], expires_delta: Optional[timedelta] = None
+        subject: str | Any, expires_delta: timedelta | None = None
     ) -> str:
         """액세스 토큰 생성"""
         if expires_delta:
@@ -30,6 +30,7 @@ class SecurityManager:
             expire = datetime.utcnow() + timedelta(
                 minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
             )
+
         to_encode = {"exp": expire, "sub": str(subject), "type": "access"}
         encoded_jwt = jwt.encode(
             to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM
@@ -37,7 +38,7 @@ class SecurityManager:
         return encoded_jwt
 
     @staticmethod
-    def create_refresh_token(subject: Union[str, Any]) -> str:
+    def create_refresh_token(subject: str | Any) -> str:
         """리프레시 토큰 생성"""
         expire = datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
         to_encode = {"exp": expire, "sub": str(subject), "type": "refresh"}
@@ -47,18 +48,21 @@ class SecurityManager:
         return encoded_jwt
 
     @staticmethod
-    def verify_token(token: str, token_type: str = "access") -> Optional[str]:
+    def verify_token(token: str, token_type: str = "access") -> str | None:
         """토큰 검증"""
         try:
             payload = jwt.decode(
                 token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
             )
+
             # 토큰 타입 검증
             if payload.get("type") != token_type:
                 return None
-            user_id: str = payload.get("sub")
-            if user_id is None:
+
+            user_id = payload.get("sub")
+            if not isinstance(user_id, str):
                 return None
+
             return user_id
         except JWTError:
             return None
