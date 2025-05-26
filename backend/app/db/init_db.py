@@ -5,9 +5,10 @@
 
 import asyncio
 
-from sqlalchemy import text
+from sqlalchemy import select, text
 
 from app.core.config import settings
+from app.core.security import security
 from app.db.session import AsyncSessionLocal, async_engine
 
 
@@ -18,26 +19,25 @@ async def init_database() -> None:
     if settings.ENVIRONMENT == "development":
         from app.db.base import Base
 
+        # 모든 모델 import (테이블 생성을 위해)
+
         async with async_engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
 
-    # 기본 관리자 계정 생성 (모델 구현 후 활성화)
-    # await create_initial_admin()
+    # 기본 관리자 계정 생성
+    await create_initial_admin()
 
 
 async def create_initial_admin() -> None:
-    """초기 관리자 계정 생성 (모델 구현 후 사용)"""
-    # 모델이 구현되면 아래 주석을 해제하세요
-    """
+    """초기 관리자 계정 생성"""
     from app.models.user import User
     from app.utils.constants import UserRole
+
     async with AsyncSessionLocal() as session:
         # 기존 관리자 확인
-        from sqlalchemy import select
-        result = await session.execute(
-            select(User).where(User.role == UserRole.ADMIN)
-        )
+        result = await session.execute(select(User).where(User.role == UserRole.ADMIN))
         existing_admin = result.scalars().first()
+
         if not existing_admin:
             # 관리자 계정 생성
             admin_user = User(
@@ -52,8 +52,6 @@ async def create_initial_admin() -> None:
             session.add(admin_user)
             await session.commit()
             print("✅ Initial admin user created: admin / admin123!")
-    """
-    pass
 
 
 async def check_database_connection() -> bool:
