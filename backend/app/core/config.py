@@ -4,9 +4,9 @@
 """
 
 import secrets
-from typing import Any
 
-from pydantic import AnyHttpUrl, BaseSettings, EmailStr, HttpUrl, PostgresDsn, validator
+from pydantic import AnyHttpUrl, EmailStr, HttpUrl, field_validator
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
@@ -31,7 +31,8 @@ class Settings(BaseSettings):
     # CORS 설정
     BACKEND_CORS_ORIGINS: list[AnyHttpUrl] = []
 
-    @validator("BACKEND_CORS_ORIGINS", pre=True)
+    @field_validator("BACKEND_CORS_ORIGINS", mode="before")
+    @classmethod
     def assemble_cors_origins(cls, v: str | list[str]) -> list[str] | str:
         if isinstance(v, str) and not v.startswith("["):
             return [i.strip() for i in v.split(",")]
@@ -45,30 +46,35 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: str = "password"
     POSTGRES_DB: str = "insurance_ars"
     POSTGRES_PORT: str = "5432"
-    DATABASE_URL: PostgresDsn | None = None
+    DATABASE_URL: str | None = None
     DATABASE_URL_SYNC: str | None = None
 
-    @validator("DATABASE_URL", pre=True)
-    def assemble_db_connection(cls, v: str | None, values: dict[str, Any]) -> Any:
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def assemble_db_connection(cls, v: str | None, info) -> str:
         if isinstance(v, str):
             return v
-        return PostgresDsn.build(
-            scheme="postgresql+asyncpg",
-            user=values.get("POSTGRES_USER"),
-            password=values.get("POSTGRES_PASSWORD"),
-            host=values.get("POSTGRES_SERVER"),
-            port=values.get("POSTGRES_PORT"),
-            path=f"/{values.get('POSTGRES_DB') or ''}",
+        values = info.data if hasattr(info, "data") else {}
+        return (
+            f"postgresql+asyncpg://{values.get('POSTGRES_USER', 'postgres')}:"
+            f"{values.get('POSTGRES_PASSWORD', 'password')}@"
+            f"{values.get('POSTGRES_SERVER', 'localhost')}:"
+            f"{values.get('POSTGRES_PORT', '5432')}/"
+            f"{values.get('POSTGRES_DB', 'insurance_ars')}"
         )
 
-    @validator("DATABASE_URL_SYNC", pre=True)
-    def assemble_sync_db_connection(cls, v: str | None, values: dict[str, Any]) -> str:
+    @field_validator("DATABASE_URL_SYNC", mode="before")
+    @classmethod
+    def assemble_sync_db_connection(cls, v: str | None, info) -> str:
         if isinstance(v, str):
             return v
+        values = info.data if hasattr(info, "data") else {}
         return (
-            f"postgresql://{values.get('POSTGRES_USER')}:"
-            f"{values.get('POSTGRES_PASSWORD')}@{values.get('POSTGRES_SERVER')}:"
-            f"{values.get('POSTGRES_PORT')}/{values.get('POSTGRES_DB')}"
+            f"postgresql://{values.get('POSTGRES_USER', 'postgres')}:"
+            f"{values.get('POSTGRES_PASSWORD', 'password')}@"
+            f"{values.get('POSTGRES_SERVER', 'localhost')}:"
+            f"{values.get('POSTGRES_PORT', '5432')}/"
+            f"{values.get('POSTGRES_DB', 'insurance_ars')}"
         )
 
     # Redis 설정
@@ -79,6 +85,27 @@ class Settings(BaseSettings):
     AUDIO_DIR: str = "./audio_files"
     MAX_FILE_SIZE: int = 50 * 1024 * 1024  # 50MB
     ALLOWED_FILE_EXTENSIONS: list[str] = [".wav", ".mp3", ".flac", ".ogg"]
+
+    @field_validator("MAX_FILE_SIZE", mode="before")
+    @classmethod
+    def parse_file_size(cls, v) -> int:
+        """파일 크기 문자열을 바이트로 변환"""
+        if isinstance(v, int):
+            return v
+        if isinstance(v, str):
+            v = v.upper().strip()
+            if v.endswith("MB"):
+                return int(v[:-2]) * 1024 * 1024
+            elif v.endswith("KB"):
+                return int(v[:-2]) * 1024
+            elif v.endswith("GB"):
+                return int(v[:-2]) * 1024 * 1024 * 1024
+            elif v.endswith("B"):
+                return int(v[:-1])
+            else:
+                # 숫자만 있는 경우 바이트로 가정
+                return int(v)
+        return v
 
     # TTS 설정
     TTS_MODEL_PATH: str = "./models"
