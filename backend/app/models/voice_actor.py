@@ -4,7 +4,6 @@
 
 from sqlalchemy import Boolean, Column, Enum, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import relationship
 
 from app.db.base import Base
 from app.utils.constants import AgeRangeType, GenderType, ModelStatus
@@ -32,8 +31,8 @@ class VoiceActor(Base):
     # 작성자 정보
     created_by = Column(Integer, ForeignKey("users.id"))
 
-    # 관계 (단순한 관계만)
-    creator = relationship("User")
+    # 관계 제거 (임시)
+    # creator = relationship("User")
 
     def __repr__(self) -> str:
         return f"<VoiceActor(id={self.id}, name='{self.name}', gender='{self.gender}')>"
@@ -58,8 +57,8 @@ class VoiceModel(Base):
     # 설정 정보
     config = Column(JSONB, default={})
 
-    # 관계 (단순한 관계만)
-    voice_actor = relationship("VoiceActor")
+    # 관계 제거 (임시)
+    # voice_actor = relationship("VoiceActor")
 
     def __repr__(self) -> str:
         return f"<VoiceModel(id={self.id}, name='{self.model_name}', status='{self.status}')>"
@@ -83,9 +82,9 @@ class VoiceSample(Base):
     # 업로드 정보
     uploaded_by = Column(Integer, ForeignKey("users.id"))
 
-    # 관계 (단순한 관계만)
-    voice_actor = relationship("VoiceActor")
-    uploader = relationship("User")
+    # 관계 제거 (임시)
+    # voice_actor = relationship("VoiceActor")
+    # uploader = relationship("User")
 
     def __repr__(self) -> str:
         return f"<VoiceSample(id={self.id}, voice_actor_id={self.voice_actor_id}, duration={self.duration})>"

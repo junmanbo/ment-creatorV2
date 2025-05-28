@@ -1,4 +1,3 @@
-# app/models/audit.py
 """
 감사 및 로그 모델
 """

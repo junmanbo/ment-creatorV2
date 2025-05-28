@@ -43,9 +43,14 @@ class Scenario(Base):
     created_by = Column(Integer, ForeignKey("users.id"))
     updated_by = Column(Integer, ForeignKey("users.id"))
 
-    # 관계 (단순한 관계만 유지)
-    creator = relationship("User", foreign_keys=[created_by])
-    updater = relationship("User", foreign_keys=[updated_by])
+    # 관계 (back_populates 없이 단방향만)
+    creator = relationship(
+        "User", foreign_keys=[created_by], overlaps="created_scenarios"
+    )
+    updater = relationship(
+        "User", foreign_keys=[updated_by], overlaps="updated_scenarios"
+    )
+    deployments = relationship("Deployment", overlaps="scenario")
 
     # 제약 조건
     __table_args__ = (
@@ -74,8 +79,8 @@ class ScenarioNode(Base):
     # 설정 정보
     config = Column(JSONB, default={}, nullable=False)
 
-    # 관계 (단순한 관계만)
-    scenario = relationship("Scenario")
+    # 관계 제거 (임시)
+    # scenario = relationship("Scenario")
 
     # 제약 조건
     __table_args__ = (
@@ -100,8 +105,8 @@ class ScenarioConnection(Base):
     condition = Column(JSONB)  # 분기 조건
     label = Column(String(100))
 
-    # 관계 (단순한 관계만)
-    scenario = relationship("Scenario")
+    # 관계 제거 (임시)
+    # scenario = relationship("Scenario")
 
     def __repr__(self) -> str:
         return f"<ScenarioConnection(id={self.id}, {self.source_node_id} -> {self.target_node_id})>"
@@ -121,9 +126,9 @@ class ScenarioVersion(Base):
     # 작성자 정보
     created_by = Column(Integer, ForeignKey("users.id"))
 
-    # 관계 (단순한 관계만)
-    scenario = relationship("Scenario")
-    creator = relationship("User")
+    # 관계 제거 (임시)
+    # scenario = relationship("Scenario")
+    # creator = relationship("User")
 
     # 제약 조건
     __table_args__ = (

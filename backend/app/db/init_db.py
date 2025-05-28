@@ -14,16 +14,53 @@ from app.db.session import AsyncSessionLocal, async_engine
 async def init_database() -> None:
     """데이터베이스 초기화"""
 
+    print(f"🔧 Environment: {settings.ENVIRONMENT}")
+
     # 테이블 생성 (개발 환경에서만)
     if settings.ENVIRONMENT == "development":
+        try:
+            from app.db.base import Base
 
-        # 모델들을 개별적으로 import하여 순환 참조 방지
-        from app.db.base import Base
+            # 모든 모델을 명시적으로 import해서 SQLAlchemy가 인식하도록 함
+            print("📦 Importing models...")
 
-        async with async_engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
+            print(f"📊 Found {len(Base.metadata.tables)} tables to create:")
+            for table_name in Base.metadata.tables:
+                print(f"  - {table_name}")
+
+            print("🚀 Creating tables...")
+            async with async_engine.begin() as conn:
+                await conn.run_sync(Base.metadata.create_all)
+
+            print("✅ Database tables created successfully")
+
+            # 테이블 생성 확인
+            async with AsyncSessionLocal() as session:
+                # PostgreSQL에서 테이블 목록 조회
+                result = await session.execute(
+                    text("""
+                    SELECT table_name
+                    FROM information_schema.tables
+                    WHERE table_schema = 'public'
+                    ORDER BY table_name
+                """)
+                )
+                tables = result.fetchall()
+                print("📋 Created tables in database:")
+                for table in tables:
+                    print(f"  - {table[0]}")
+
+        except Exception as e:
+            print(f"❌ Error during table creation: {e}")
+            import traceback
+
+            traceback.print_exc()
+            raise
+    else:
+        print(f"⚠️ Skipping table creation (environment: {settings.ENVIRONMENT})")
 
     # 기본 관리자 계정 생성
+    print("👤 Creating initial admin user...")
     await create_initial_admin()
 
 

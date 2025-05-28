@@ -1,4 +1,3 @@
-# app/models/monitoring.py
 """
 모니터링 관련 모델
 """

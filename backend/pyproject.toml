@@ -99,6 +99,7 @@ ignore = [
     "PLR2004", # magic value used in comparison
     "ERA001",  # commented out code (개발 중에는 허용)
     "RUF022",  # ruff-specific rule for unused imports
+    "F811",    # 
 ]
 
 # 파일별 무시 규칙

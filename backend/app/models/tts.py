@@ -4,7 +4,6 @@ TTS 관련 모델
 
 from sqlalchemy import Boolean, Column, Enum, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import relationship
 
 from app.db.base import Base
 from app.utils.constants import GenerationStatus
@@ -27,10 +26,10 @@ class TTSScript(Base):
     # 작성자 정보
     created_by = Column(Integer, ForeignKey("users.id"))
 
-    # 관계 (단순한 관계만)
-    scenario = relationship("Scenario")
-    voice_actor = relationship("VoiceActor")
-    creator = relationship("User")
+    # 관계 제거 (임시)
+    # scenario = relationship("Scenario")
+    # voice_actor = relationship("VoiceActor")
+    # creator = relationship("User")
 
     def __repr__(self) -> str:
         return f"<TTSScript(id={self.id}, scenario_id={self.scenario_id}, node_id='{self.node_id}')>"
@@ -65,10 +64,10 @@ class TTSGeneration(Base):
     started_at = Column(Integer)  # Unix timestamp
     completed_at = Column(Integer)  # Unix timestamp
 
-    # 관계 (단순한 관계만)
-    script = relationship("TTSScript")
-    voice_model = relationship("VoiceModel")
-    requester = relationship("User")
+    # 관계 제거 (임시)
+    # script = relationship("TTSScript")
+    # voice_model = relationship("VoiceModel")
+    # requester = relationship("User")
 
     def __repr__(self) -> str:
         return f"<TTSGeneration(id={self.id}, script_id={self.script_id}, status='{self.status}')>"
@@ -96,9 +95,9 @@ class TTSLibrary(Base):
     # 작성자 정보
     created_by = Column(Integer, ForeignKey("users.id"))
 
-    # 관계 (단순한 관계만)
-    voice_actor = relationship("VoiceActor")
-    creator = relationship("User")
+    # 관계 제거 (임시)
+    # voice_actor = relationship("VoiceActor")
+    # creator = relationship("User")
 
     def __repr__(self) -> str:
         return f"<TTSLibrary(id={self.id}, name='{self.name}', category='{self.category}')>"

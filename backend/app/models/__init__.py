@@ -1,8 +1,8 @@
-# app/models/__init__.py
 """
 모델 모듈 초기화
 """
 
+# 개별 import로 변경하여 순환 참조 방지
 from .audit import AuditLog, SystemLog
 from .deployment import Deployment
 from .monitoring import SystemMetric
