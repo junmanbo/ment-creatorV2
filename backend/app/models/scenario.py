@@ -1,4 +1,3 @@
-# app/models/scenario.py
 """
 시나리오 관련 모델
 """
@@ -38,32 +37,15 @@ class Scenario(Base):
     is_template = Column(Boolean, default=False, nullable=False)
 
     # 메타데이터
-    metadata = Column(JSONB, default={})
+    meta_data = Column(JSONB, default={})
 
     # 작성자 정보
     created_by = Column(Integer, ForeignKey("users.id"))
     updated_by = Column(Integer, ForeignKey("users.id"))
 
-    # 관계
-    creator = relationship(
-        "User", foreign_keys=[created_by], back_populates="created_scenarios"
-    )
-    updater = relationship(
-        "User", foreign_keys=[updated_by], back_populates="updated_scenarios"
-    )
-    nodes = relationship(
-        "ScenarioNode", back_populates="scenario", cascade="all, delete-orphan"
-    )
-    connections = relationship(
-        "ScenarioConnection", back_populates="scenario", cascade="all, delete-orphan"
-    )
-    versions = relationship(
-        "ScenarioVersion", back_populates="scenario", cascade="all, delete-orphan"
-    )
-    tts_scripts = relationship(
-        "TTSScript", back_populates="scenario", cascade="all, delete-orphan"
-    )
-    deployments = relationship("Deployment", back_populates="scenario")
+    # 관계 (단순한 관계만 유지)
+    creator = relationship("User", foreign_keys=[created_by])
+    updater = relationship("User", foreign_keys=[updated_by])
 
     # 제약 조건
     __table_args__ = (
@@ -92,19 +74,8 @@ class ScenarioNode(Base):
     # 설정 정보
     config = Column(JSONB, default={}, nullable=False)
 
-    # 관계
-    scenario = relationship("Scenario", back_populates="nodes")
-    source_connections = relationship(
-        "ScenarioConnection",
-        foreign_keys="ScenarioConnection.source_node_id",
-        back_populates="source_node",
-    )
-    target_connections = relationship(
-        "ScenarioConnection",
-        foreign_keys="ScenarioConnection.target_node_id",
-        back_populates="target_node",
-    )
-    tts_scripts = relationship("TTSScript", back_populates="node")
+    # 관계 (단순한 관계만)
+    scenario = relationship("Scenario")
 
     # 제약 조건
     __table_args__ = (
@@ -129,22 +100,8 @@ class ScenarioConnection(Base):
     condition = Column(JSONB)  # 분기 조건
     label = Column(String(100))
 
-    # 관계
-    scenario = relationship("Scenario", back_populates="connections")
-    source_node = relationship(
-        "ScenarioNode",
-        foreign_keys=[source_node_id],
-        primaryjoin="and_(ScenarioConnection.scenario_id == ScenarioNode.scenario_id, "
-        "ScenarioConnection.source_node_id == ScenarioNode.node_id)",
-        back_populates="source_connections",
-    )
-    target_node = relationship(
-        "ScenarioNode",
-        foreign_keys=[target_node_id],
-        primaryjoin="and_(ScenarioConnection.scenario_id == ScenarioNode.scenario_id, "
-        "ScenarioConnection.target_node_id == ScenarioNode.node_id)",
-        back_populates="target_connections",
-    )
+    # 관계 (단순한 관계만)
+    scenario = relationship("Scenario")
 
     def __repr__(self) -> str:
         return f"<ScenarioConnection(id={self.id}, {self.source_node_id} -> {self.target_node_id})>"
@@ -164,8 +121,8 @@ class ScenarioVersion(Base):
     # 작성자 정보
     created_by = Column(Integer, ForeignKey("users.id"))
 
-    # 관계
-    scenario = relationship("Scenario", back_populates="versions")
+    # 관계 (단순한 관계만)
+    scenario = relationship("Scenario")
     creator = relationship("User")
 
     # 제약 조건

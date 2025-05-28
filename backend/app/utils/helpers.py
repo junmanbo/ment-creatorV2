@@ -17,7 +17,6 @@ except ImportError:
 from fastapi import UploadFile
 
 from app.core.config import settings
-from app.utils.logger import logger
 
 
 async def save_upload_file(
@@ -49,7 +48,7 @@ async def save_upload_file(
         content = await file.read()
         await f.write(content)
 
-    logger.info(f"File saved: {file_path}")
+    print(f"File saved: {file_path}")
     return str(file_path)
 
 

@@ -1,4 +1,3 @@
-# app/utils/__init__.py
 """
 유틸리티 모듈 초기화
 """
@@ -27,8 +26,10 @@ from .helpers import (
     save_upload_file,
     validate_file_extension,
 )
-from .logger import log_api_call, log_business_event, log_error, logger
 from .validators import DataValidator, validate_email, validate_password_strength
+
+# logger는 별도로 import해야 순환 참조 방지
+# from .logger import log_api_call, log_business_event, log_error, logger
 
 __all__ = [
     # Constants
@@ -53,11 +54,6 @@ __all__ = [
     "sanitize_filename",
     "save_upload_file",
     "validate_file_extension",
-    # Logger
-    "log_api_call",
-    "log_business_event",
-    "log_error",
-    "logger",
     # Validators
     "DataValidator",
     "validate_email",

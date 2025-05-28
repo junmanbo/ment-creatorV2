@@ -1,4 +1,3 @@
-# app/models/voice_actor.py
 """
 성우 및 음성 모델 관련 모델
 """
@@ -33,16 +32,8 @@ class VoiceActor(Base):
     # 작성자 정보
     created_by = Column(Integer, ForeignKey("users.id"))
 
-    # 관계
-    creator = relationship("User", back_populates="voice_actors")
-    models = relationship(
-        "VoiceModel", back_populates="voice_actor", cascade="all, delete-orphan"
-    )
-    samples = relationship(
-        "VoiceSample", back_populates="voice_actor", cascade="all, delete-orphan"
-    )
-    tts_scripts = relationship("TTSScript", back_populates="voice_actor")
-    library_items = relationship("TTSLibrary", back_populates="voice_actor")
+    # 관계 (단순한 관계만)
+    creator = relationship("User")
 
     def __repr__(self) -> str:
         return f"<VoiceActor(id={self.id}, name='{self.name}', gender='{self.gender}')>"
@@ -67,9 +58,8 @@ class VoiceModel(Base):
     # 설정 정보
     config = Column(JSONB, default={})
 
-    # 관계
-    voice_actor = relationship("VoiceActor", back_populates="models")
-    tts_generations = relationship("TTSGeneration", back_populates="voice_model")
+    # 관계 (단순한 관계만)
+    voice_actor = relationship("VoiceActor")
 
     def __repr__(self) -> str:
         return f"<VoiceModel(id={self.id}, name='{self.model_name}', status='{self.status}')>"
@@ -93,8 +83,8 @@ class VoiceSample(Base):
     # 업로드 정보
     uploaded_by = Column(Integer, ForeignKey("users.id"))
 
-    # 관계
-    voice_actor = relationship("VoiceActor", back_populates="samples")
+    # 관계 (단순한 관계만)
+    voice_actor = relationship("VoiceActor")
     uploader = relationship("User")
 
     def __repr__(self) -> str:

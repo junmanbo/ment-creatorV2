@@ -1,4 +1,3 @@
-# app/models/tts.py
 """
 TTS 관련 모델
 """
@@ -28,18 +27,10 @@ class TTSScript(Base):
     # 작성자 정보
     created_by = Column(Integer, ForeignKey("users.id"))
 
-    # 관계
-    scenario = relationship("Scenario", back_populates="tts_scripts")
-    node = relationship(
-        "ScenarioNode",
-        primaryjoin="and_(TTSScript.scenario_id == ScenarioNode.scenario_id, "
-        "TTSScript.node_id == ScenarioNode.node_id)",
-    )
-    voice_actor = relationship("VoiceActor", back_populates="tts_scripts")
-    creator = relationship("User", back_populates="tts_scripts")
-    generations = relationship(
-        "TTSGeneration", back_populates="script", cascade="all, delete-orphan"
-    )
+    # 관계 (단순한 관계만)
+    scenario = relationship("Scenario")
+    voice_actor = relationship("VoiceActor")
+    creator = relationship("User")
 
     def __repr__(self) -> str:
         return f"<TTSScript(id={self.id}, scenario_id={self.scenario_id}, node_id='{self.node_id}')>"
@@ -74,10 +65,10 @@ class TTSGeneration(Base):
     started_at = Column(Integer)  # Unix timestamp
     completed_at = Column(Integer)  # Unix timestamp
 
-    # 관계
-    script = relationship("TTSScript", back_populates="generations")
-    voice_model = relationship("VoiceModel", back_populates="tts_generations")
-    requester = relationship("User", back_populates="tts_generations")
+    # 관계 (단순한 관계만)
+    script = relationship("TTSScript")
+    voice_model = relationship("VoiceModel")
+    requester = relationship("User")
 
     def __repr__(self) -> str:
         return f"<TTSGeneration(id={self.id}, script_id={self.script_id}, status='{self.status}')>"
@@ -105,8 +96,8 @@ class TTSLibrary(Base):
     # 작성자 정보
     created_by = Column(Integer, ForeignKey("users.id"))
 
-    # 관계
-    voice_actor = relationship("VoiceActor", back_populates="library_items")
+    # 관계 (단순한 관계만)
+    voice_actor = relationship("VoiceActor")
     creator = relationship("User")
 
     def __repr__(self) -> str:

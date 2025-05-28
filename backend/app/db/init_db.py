@@ -1,4 +1,3 @@
-# app/db/init_db.py
 """
 데이터베이스 초기화
 """
@@ -17,9 +16,9 @@ async def init_database() -> None:
 
     # 테이블 생성 (개발 환경에서만)
     if settings.ENVIRONMENT == "development":
-        from app.db.base import Base
 
-        # 모든 모델 import (테이블 생성을 위해)
+        # 모델들을 개별적으로 import하여 순환 참조 방지
+        from app.db.base import Base
 
         async with async_engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)

@@ -10,19 +10,19 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from app.core.config import settings
 from app.db.init_db import init_database
-from app.utils.logger import logger
 
 
 async def main():
     """메인 함수"""
     try:
-        logger.info("🔄 Initializing database...")
+        print("🔄 Initializing database...")
         await init_database()
-        logger.info("✅ Database initialization completed successfully")
+        print("✅ Database initialization completed successfully")
     except Exception as e:
-        logger.error(f"❌ Database initialization failed: {e}")
+        print(f"❌ Database initialization failed: {e}")
+        import traceback
+        traceback.print_exc()
         sys.exit(1)
 
 

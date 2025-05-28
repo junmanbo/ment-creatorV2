@@ -1,4 +1,3 @@
-# app/utils/logger.py
 """
 로깅 설정
 """
