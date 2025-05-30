@@ -1,4 +1,3 @@
-# app/utils/validators.py
 """
 데이터 검증 유틸리티
 """
@@ -134,7 +133,7 @@ class DataValidator:
         # 속도 검증 (0.5 ~ 2.0)
         if "speed" in settings_dict:
             speed = settings_dict["speed"]
-            if not isinstance(speed, int | float) or not (0.5 <= speed <= 2.0):
+            if not isinstance(speed, (int | float)) or not (0.5 <= speed <= 2.0):
                 raise ValidationError("속도는 0.5에서 2.0 사이의 값이어야 합니다.")
 
         # 톤 검증
