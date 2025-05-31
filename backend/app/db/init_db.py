@@ -1,7 +1,6 @@
 """
 데이터베이스 초기화
 """
-
 import asyncio
 
 from sqlalchemy import select, text
@@ -23,6 +22,13 @@ async def init_database() -> None:
 
             # 모든 모델을 명시적으로 import해서 SQLAlchemy가 인식하도록 함
             print("📦 Importing models...")
+            import app.models.user  # noqa
+            import app.models.scenario  # noqa
+            import app.models.voice_actor  # noqa
+            import app.models.tts  # noqa
+            import app.models.deployment  # noqa
+            import app.models.audit  # noqa
+            import app.models.monitoring  # noqa
 
             print(f"📊 Found {len(Base.metadata.tables)} tables to create:")
             for table_name in Base.metadata.tables:
@@ -88,6 +94,8 @@ async def create_initial_admin() -> None:
             session.add(admin_user)
             await session.commit()
             print("✅ Initial admin user created: admin / admin123!")
+        else:
+            print("ℹ️ Admin user already exists")
 
 
 async def check_database_connection() -> bool:
@@ -100,6 +108,8 @@ async def check_database_connection() -> bool:
         return True
     except Exception as e:
         print(f"❌ Database connection failed: {e}")
+        print("💡 PostgreSQL이 실행 중인지 확인하세요:")
+        print("   docker-compose up -d")
         return False
 
 

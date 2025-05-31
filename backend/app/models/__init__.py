@@ -5,6 +5,7 @@
 # 개별 import로 변경하여 순환 참조 방지
 from .audit import AuditLog, SystemLog
 from .deployment import Deployment
+from .file import FileRecord, FileAccessLog
 from .monitoring import SystemMetric
 from .scenario import Scenario, ScenarioConnection, ScenarioNode, ScenarioVersion
 from .tts import TTSGeneration, TTSLibrary, TTSScript
@@ -27,6 +28,9 @@ __all__ = [
     "TTSScript",
     "TTSGeneration",
     "TTSLibrary",
+    # File 관련
+    "FileRecord",
+    "FileAccessLog",
     # Deployment 관련
     "Deployment",
     # Monitoring 관련

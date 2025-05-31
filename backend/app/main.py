@@ -1,12 +1,44 @@
 """
-FastAPI 애플리케이션 메인 파일 (기본 테스트 버전)
+FastAPI 애플리케이션 메인 파일
 """
+from contextlib import asynccontextmanager
 from typing import Any, Dict
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, status
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.core.config import settings
+from app.core.exceptions import BaseCustomException
+from app.core.middleware import setup_middleware
+from app.db.init_db import check_database_connection, init_database
 from app.utils.logger import logger
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    """애플리케이션 생명주기 관리"""
+    
+    # 시작 시 실행
+    logger.info("🚀 Starting Insurance ARS Manager API")
+    
+    # 데이터베이스 연결 확인
+    db_connected = await check_database_connection()
+    if not db_connected:
+        logger.error("Failed to connect to database")
+        raise RuntimeError("Database connection failed")
+    
+    # 데이터베이스 초기화
+    if settings.ENVIRONMENT in ["development", "testing"]:
+        await init_database()
+    
+    logger.info("✅ Application startup completed")
+    
+    yield
+    
+    # 종료 시 실행
+    logger.info("🛑 Shutting down Insurance ARS Manager API")
 
 
 def create_application() -> FastAPI:
@@ -16,22 +48,32 @@ def create_application() -> FastAPI:
         title=settings.PROJECT_NAME,
         version=settings.VERSION,
         description=settings.DESCRIPTION,
-        openapi_url=f"{settings.API_V1_STR}/openapi.json",
-        docs_url=f"{settings.API_V1_STR}/docs",
-        redoc_url=f"{settings.API_V1_STR}/redoc",
+        openapi_url=f"{settings.API_V1_STR}/openapi.json" if settings.DEBUG else None,
+        docs_url=f"{settings.API_V1_STR}/docs" if settings.DEBUG else None,
+        redoc_url=f"{settings.API_V1_STR}/redoc" if settings.DEBUG else None,
+        lifespan=lifespan,
     )
     
-    # 기본 라우터만 등록
-    setup_basic_routers(app)
+    # 미들웨어 설정
+    setup_middleware(app)
     
-    logger.info("FastAPI application created successfully")
+    # 라우터 등록
+    setup_routers(app)
+    
+    # 예외 핸들러 등록
+    setup_exception_handlers(app)
     
     return app
 
 
-def setup_basic_routers(app: FastAPI) -> None:
-    """기본 라우터 설정"""
+def setup_routers(app: FastAPI) -> None:
+    """라우터 설정"""
     
+    # API v1 라우터 등록
+    from app.api.v1.api import api_router
+    app.include_router(api_router, prefix=settings.API_V1_STR)
+    
+    # 헬스체크 엔드포인트
     @app.get("/health")
     async def health_check() -> Dict[str, Any]:
         """헬스체크 엔드포인트"""
@@ -42,46 +84,132 @@ def setup_basic_routers(app: FastAPI) -> None:
             "environment": settings.ENVIRONMENT,
         }
     
+    # 루트 엔드포인트
     @app.get("/")
     async def root() -> Dict[str, str]:
         """루트 엔드포인트"""
         return {
             "message": f"Welcome to {settings.PROJECT_NAME}",
             "version": settings.VERSION,
-            "docs_url": f"{settings.API_V1_STR}/docs",
+            "docs_url": f"{settings.API_V1_STR}/docs" if settings.DEBUG else None,
         }
+
+
+def setup_exception_handlers(app: FastAPI) -> None:
+    """예외 핸들러 설정"""
     
-    # API v1 기본 엔드포인트들
-    @app.get(f"{settings.API_V1_STR}/")
-    async def api_v1_root() -> Dict[str, str]:
-        """API v1 루트"""
-        return {"message": "API v1 is running", "version": settings.VERSION}
+    @app.exception_handler(BaseCustomException)
+    async def custom_exception_handler(
+        request: Request, 
+        exc: BaseCustomException
+    ) -> JSONResponse:
+        """커스텀 예외 핸들러"""
+        
+        logger.error(
+            "Custom exception occurred",
+            error_code=exc.error_code,
+            message=exc.message,
+            details=exc.details,
+            path=request.url.path,
+        )
+        
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={
+                "success": False,
+                "error": {
+                    "code": exc.error_code,
+                    "message": exc.message,
+                    "details": exc.details,
+                },
+                "timestamp": "2025-05-31T10:30:00Z",  # UTC 시간으로 교체 필요
+                "request_id": request.headers.get("X-Request-ID", ""),
+            },
+        )
     
-    @app.get(f"{settings.API_V1_STR}/status")
-    async def api_status() -> Dict[str, Any]:
-        """API 상태 확인"""
-        return {
-            "api_version": "v1",
-            "status": "operational",
-            "features": [
-                "Authentication",
-                "User Management", 
-                "Scenario Management",
-                "Voice Actor Management",
-                "TTS Generation"
-            ]
-        }
+    @app.exception_handler(StarletteHTTPException)
+    async def http_exception_handler(
+        request: Request, 
+        exc: StarletteHTTPException
+    ) -> JSONResponse:
+        """HTTP 예외 핸들러"""
+        
+        logger.warning(
+            "HTTP exception occurred",
+            status_code=exc.status_code,
+            detail=exc.detail,
+            path=request.url.path,
+        )
+        
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={
+                "success": False,
+                "error": {
+                    "code": "HTTP_ERROR",
+                    "message": exc.detail,
+                    "details": {},
+                },
+                "timestamp": "2025-05-31T10:30:00Z",  # UTC 시간으로 교체 필요
+                "request_id": request.headers.get("X-Request-ID", ""),
+            },
+        )
     
-    # 간단한 테스트 엔드포인트들 추가
-    @app.get(f"{settings.API_V1_STR}/test/ping")
-    async def ping() -> Dict[str, str]:
-        """핑 테스트"""
-        return {"message": "pong"}
+    @app.exception_handler(RequestValidationError)
+    async def validation_exception_handler(
+        request: Request, 
+        exc: RequestValidationError
+    ) -> JSONResponse:
+        """검증 예외 핸들러"""
+        
+        logger.warning(
+            "Validation error occurred",
+            errors=exc.errors(),
+            path=request.url.path,
+        )
+        
+        return JSONResponse(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            content={
+                "success": False,
+                "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "입력 데이터 검증에 실패했습니다.",
+                    "details": {"validation_errors": exc.errors()},
+                },
+                "timestamp": "2025-05-31T10:30:00Z",  # UTC 시간으로 교체 필요
+                "request_id": request.headers.get("X-Request-ID", ""),
+            },
+        )
     
-    @app.post(f"{settings.API_V1_STR}/test/echo")
-    async def echo(data: Dict[str, Any]) -> Dict[str, Any]:
-        """에코 테스트"""
-        return {"received": data, "timestamp": "2025-05-31T00:00:00Z"}
+    @app.exception_handler(Exception)
+    async def general_exception_handler(
+        request: Request, 
+        exc: Exception
+    ) -> JSONResponse:
+        """일반 예외 핸들러"""
+        
+        logger.error(
+            "Unexpected error occurred",
+            error=str(exc),
+            error_type=type(exc).__name__,
+            path=request.url.path,
+            exc_info=True,
+        )
+        
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={
+                "success": False,
+                "error": {
+                    "code": "INTERNAL_SERVER_ERROR",
+                    "message": "내부 서버 오류가 발생했습니다.",
+                    "details": {} if settings.ENVIRONMENT == "production" else {"error": str(exc)},
+                },
+                "timestamp": "2025-05-31T10:30:00Z",  # UTC 시간으로 교체 필요
+                "request_id": request.headers.get("X-Request-ID", ""),
+            },
+        )
 
 
 # FastAPI 앱 인스턴스 생성

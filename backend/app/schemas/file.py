@@ -3,7 +3,7 @@
 파일 관련 스키마
 """
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -12,7 +12,7 @@ from app.schemas.base import PaginatedResponse
 
 class FileBase(BaseModel):
     """파일 기본 스키마"""
-    original_name: str = Field(..., description="원본 파일명")
+    original_filename: str = Field(..., description="원본 파일명")
     category: str = Field(default="general", description="파일 카테고리")
     description: Optional[str] = Field(None, description="파일 설명")
 
@@ -34,7 +34,7 @@ class FileResponse(FileBase):
     file_id: str = Field(..., description="고유 파일 ID")
     file_path: str = Field(..., description="파일 경로")
     file_size: int = Field(..., description="파일 크기 (bytes)")
-    mime_type: Optional[str] = Field(None, description="MIME 타입")
+    content_type: Optional[str] = Field(None, description="Content Type")
     file_hash: str = Field(..., description="파일 해시")
     download_count: int = Field(default=0, description="다운로드 횟수")
     uploaded_by: Optional[int] = Field(None, description="업로드한 사용자 ID")
@@ -49,11 +49,24 @@ class FileUploadResponse(BaseModel):
     """파일 업로드 응답 스키마"""
     id: int = Field(..., description="파일 ID")
     file_id: str = Field(..., description="고유 파일 ID")
-    original_name: str = Field(..., description="원본 파일명")
+    original_filename: str = Field(..., description="원본 파일명")
     file_size: int = Field(..., description="파일 크기 (bytes)")
-    mime_type: Optional[str] = Field(None, description="MIME 타입")
+    content_type: Optional[str] = Field(None, description="Content Type")
     category: str = Field(..., description="파일 카테고리")
     created_at: datetime = Field(..., description="업로드일시")
+
+    class Config:
+        from_attributes = True
+
+
+class FileAccessLogResponse(BaseModel):
+    """파일 접근 로그 응답 스키마"""
+    id: int = Field(..., description="로그 ID")
+    user_id: int = Field(..., description="사용자 ID")
+    action: str = Field(..., description="액션 (download, stream, view)")
+    ip_address: Optional[str] = Field(None, description="IP 주소")
+    user_agent: Optional[str] = Field(None, description="User Agent")
+    created_at: datetime = Field(..., description="접근 시간")
 
     class Config:
         from_attributes = True
@@ -69,6 +82,32 @@ class FileStorageUsage(BaseModel):
     total_files: int = Field(..., description="총 파일 수")
     total_size: int = Field(..., description="총 크기 (bytes)")
     total_size_formatted: str = Field(..., description="포맷된 크기")
-    categories: list = Field(default_factory=list, description="카테고리별 사용량")
-    recent_uploads: list = Field(default_factory=list, description="최근 업로드")
-    large_files: list = Field(default_factory=list, description="큰 파일들")
+    categories: List[dict] = Field(default_factory=list, description="카테고리별 사용량")
+    recent_uploads: List[dict] = Field(default_factory=list, description="최근 업로드")
+    large_files: List[dict] = Field(default_factory=list, description="큰 파일들")
+
+
+class FileCategoriesResponse(BaseModel):
+    """파일 카테고리 응답 스키마"""
+    categories: List[str] = Field(..., description="카테고리 목록")
+    total: int = Field(..., description="총 카테고리 수")
+
+
+class FileUsageStatsResponse(BaseModel):
+    """파일 사용 통계 응답 스키마"""
+    total_files: int = Field(..., description="총 파일 수")
+    total_size: int = Field(..., description="총 크기")
+    uploads_by_day: List[dict] = Field(default_factory=list, description="일별 업로드")
+    downloads_by_day: List[dict] = Field(default_factory=list, description="일별 다운로드")
+    popular_files: List[dict] = Field(default_factory=list, description="인기 파일")
+    file_types: List[dict] = Field(default_factory=list, description="파일 형식별 통계")
+    storage_usage: dict = Field(default_factory=dict, description="저장소 사용량")
+
+
+class OrphanedFilesResponse(BaseModel):
+    """고아 파일 정리 응답 스키마"""
+    dry_run: bool = Field(..., description="미리보기 모드 여부")
+    orphaned_files: List[dict] = Field(default_factory=list, description="고아 파일 목록")
+    total_files: int = Field(..., description="총 고아 파일 수")
+    space_to_free: int = Field(..., description="확보할 수 있는 공간 (bytes)")
+    cleaned: bool = Field(..., description="정리 완료 여부")
